@@ -143,11 +143,21 @@ class LibvirtXMLBuilder:
 
         return str(node_xml)
 
+    def build_storage_pool_xml(self, name, path):
+        pool_xml = XMLBuilder("pool", type='dir')
+        pool_xml.name(name)
+        with pool_xml.target:
+            pool_xml.path(path)
+            with pool_xml.permissions:
+                pool_xml.mode('0755')
+
+        return str(pool_xml)
+
 
 class Libvirt:
     def __init__(self, xml_builder=LibvirtXMLBuilder(), virsh_cmd=None):
-        if not virsh_cmd: virsh_cmd = [
-            'virsh']
+        if not virsh_cmd:
+            virsh_cmd = ['virsh']
         self.xml_builder = xml_builder
         self._virsh_cmd = virsh_cmd
         self._init_capabilities()
@@ -156,12 +166,37 @@ class Libvirt:
     def virsh_cmd(self):
         return self._virsh_cmd[:]
 
+    def create_storage_pool(self, name, path):
+        output = subprocess.check_output(self.virsh_cmd + ['pool-list', '--all'])
+        lines = map(lambda s: s.split(), output.split('\n')[2:])
+        lines = filter(lambda data: len(data) == 3, lines)
+        pool_data = find(lambda data: data[0] == name, lines)
+
+        if pool_data:
+            if pool_data[1] != 'active':
+                self._virsh(['pool-start', name])
+        else:
+            storage_pool_xml = self.xml_builder.build_storage_pool_xml(name, path)
+
+            logger.debug("libvirt: Building storage pool with following XML:\n%s" % storage_pool_xml)
+
+            xml_file = tempfile.NamedTemporaryFile(delete=False)
+            xml_file.write(storage_pool_xml)
+            xml_file.close()
+
+            self._virsh(['pool-define', xml_file.name])
+            os.unlink(xml_file.name)
+
+            self._virsh(['pool-build', name])
+            self._virsh(['pool-start', name])
+
+
     def node_exists(self, node_name):
         return self._system(
             self.virsh_cmd + ['dominfo', node_name],
             expected_resultcodes=(0, 1)) == 0
 
-    def disk_exists(self, disk_name, pool='default'):
+    def disk_exists(self, disk_name, pool):
         return self._system(
             self.virsh_cmd + ["vol-info",disk_name, '--pool', pool],
             expected_resultcodes=(0, 1)) == 0
@@ -208,14 +243,13 @@ class Libvirt:
             self._virsh(['net-destroy', network.id])
 
     def _get_node_xml(self, node):
-        return self.get_output_as_xml(
-            self.virsh_cmd + ['dumpxml',node.id])
+        return self.get_output_as_xml(self.virsh_cmd + ['dumpxml',node.id])
 
-    def _get_volume_xml(self, name, pool='default'):
-        return  self.get_output_as_xml(self.virsh_cmd + ['vol-dumpxml', name, '--pool', pool])
+    def _get_volume_xml(self, name, pool):
+        return self.get_output_as_xml(self.virsh_cmd + ['vol-dumpxml', name, '--pool', pool])
 
-    def _get_volume_capacity(self, name, pool='default'):
-        xml = self._get_volume_xml(name, pool)
+    def _get_volume_capacity(self, name, pool):
+        xml = self._get_volume_xml(name, pool=pool)
         return xml.find('capacity').text
 
     def create_node(self, node):
@@ -350,35 +384,35 @@ class Libvirt:
                 ['send-key', node.id] +
                     map(lambda x: str(x), key_codes))
 
-    def _create_disk(self, name, capacity='1', pool='default', format='qcow2'):
+    def _create_disk(self, name, pool, capacity='1', format='qcow2'):
         self._virsh(
             ['vol-create-as', '--pool', pool, '--name', name,
              '--capacity', capacity,'--format', format])
 
-    def create_disk(self, disk):
-        name = self._generate_disk_id(format=disk.format)
+    def create_disk(self, disk, pool):
+        name = self._generate_disk_id(format=disk.format, pool=pool)
         if disk.base_image:
             base_name = disk.base_image.split('/')[-1]
-            if not self.disk_exists(base_name):
-                self._create_disk(base_name)
+            if not self.disk_exists(base_name, pool=pool):
+                self._create_disk(base_name, pool=pool)
                 self._virsh(
-                    ['vol-upload', base_name, disk.base_image, '--pool',  'default'])
+                    ['vol-upload', base_name, disk.base_image, '--pool', pool])
             capacity = self._get_volume_capacity(base_name)
             self._virsh(
                 ['vol-create-as', '--name', name,  '--capacity', capacity,
-                 '--pool', 'default', '--format', disk.format,
+                 '--pool', pool, '--format', disk.format,
                  '--backing-vol', base_name, '--backing-vol-format', 'qcow2'])
         else:
             capacity = str(disk.size)
-            self._create_disk(name=name, capacity=capacity, format=disk.format)
-        return self.get_disk_path(name)
+            self._create_disk(name=name, capacity=capacity, format=disk.format, pool=pool)
+        return self._get_disk_path(name, pool=pool)
 
-    def delete_disk(self, disk):
+    def delete_disk(self, disk, pool):
         if disk.path is None:
             return
-        self._virsh(['vol-delete',disk.path])
+        self._virsh(['vol-delete',disk.path, '--pool', pool])
 
-    def get_disk_path(self, name, pool='default'):
+    def _get_disk_path(self, name, pool):
         command = self.virsh_cmd + ['vol-path', name, '--pool', pool]
         return subprocess.check_output(command).strip()
 
@@ -413,10 +447,10 @@ class Libvirt:
                         domain.find('emulator') or arch.find('emulator')).text
                     self.specs.append(spec)
 
-    def _generate_disk_id(self, prefix='disk', format='qcow2'):
+    def _generate_disk_id(self, pool, prefix='disk', format='qcow2'):
         while True:
             id = prefix + '-' + str(int(time.time() * 100)) + '.%s' % format
-            if not self.disk_exists(id):
+            if not self.disk_exists(id, pool=pool):
                 return id
 
     def _generate_network_id(self, name='net'):

@@ -29,6 +29,7 @@ class Controller:
         self.driver = driver
 
         self.networks_pool = IpNetworksPool()
+        self.storage_pool = 'devops'
         self._reserve_networks()
 
         self.home_dir = os.environ.get('DEVOPS_HOME')
@@ -39,6 +40,8 @@ class Controller:
             os.makedirs(os.path.join(self.home_dir, 'environments'), 0755)
         except OSError:
             sys.exc_clear()
+
+        self.driver.create_storage_pool(self.storage_pool, os.path.join(self.home_dir, 'storage'))
 
     def build_environment(self, environment):
         logger.info("Building environment %s" % environment.name)
@@ -140,7 +143,7 @@ class Controller:
                 self.driver.delete_snapshot(node, snapshot)
 
             for disk in node.disks:
-                self.driver.delete_disk(disk)
+                self.driver.delete_disk(disk, self.storage_pool)
 
             self.driver.delete_node(node)
             del node.driver
@@ -220,7 +223,7 @@ class Controller:
     def _build_node(self, environment, node):
         for disk in filter(lambda d: d.path is None, node.disks):
             logger.debug("Creating disk file for node '%s'" % node.name)
-            disk.path = self.driver.create_disk(disk)
+            disk.path = self.driver.create_disk(disk, pool='devops')
 
         logger.debug("Creating node '%s'" % node.name)
         self.driver.create_node(node)
