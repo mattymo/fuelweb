@@ -496,11 +496,11 @@ h6.page-title {
   height: 25px;
   margin-top: 16px;
   cursor: pointer;
-	height: 25px;
-	overflow: hidden;
-	margin-left: 13px;
-	color: #666666;
-	padding-right: 14px;
+  height: 25px;
+  overflow: hidden;
+  margin-left: 13px;
+  color: #666666;
+  padding-right: 14px;
   text-align: center;
   font-size: 13px;
 }
@@ -534,11 +534,11 @@ h6.page-title {
 
 
 .node-status > .progress {
-	height: 13px;
-	background-color: #cacaca;
-	background-image: none;
-	border-radius: 3px 3px 3px 3px;
-	margin-top: 5px;
+  height: 13px;
+  background-color: #cacaca;
+  background-image: none;
+  border-radius: 3px 3px 3px 3px;
+  margin-top: 5px;
 }
 
 .node-status > .progress > .bar > p {
@@ -1667,6 +1667,46 @@ h6.page-title {
 .table-logs .no-logs-msg tr td {
   text-align: center;
   padding: 20px;
+}
+
+/* logs coloring */
+
+.table-logs tbody tr.info td {
+  background-color: #d9edf7;
+}
+
+.table-logs tbody tr.debug td {
+  background-color: #dff0d8;
+}
+
+.table-logs tbody tr.notice td {
+  background-color: #bce3b8;
+}
+
+.table-logs tbody tr.warning td {
+  background-color: #fcf8e3;
+}
+
+.table-logs tbody tr.error td {
+  background-color: #d89d9f;
+}
+
+.table-logs tbody tr.critical td {
+  background-color: #c56d6f;
+  color: #ffffff;
+}
+
+.table-logs tbody tr.alert td {
+  background-color: #eccecf;
+}
+
+.table-logs tbody tr.emergency td {
+  background-color: #ed9a57;
+}
+
+.table-logs tbody tr.fatal td {
+  background-color: #8a080b;
+  color: #ffffff;
 }
 
 .page-control-box {
