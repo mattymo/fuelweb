@@ -18,10 +18,53 @@
                     "keystone": {
                         "admin_tenant": "admin"
                     },
+                    "admin": {
+                        "email": "admin@example.org",
+                        "password": "admin"
+                    },
                     "rabbit": {
                         "user": "nova"
                     },
-                    "auto_assign_floating_ip": false
+                    "auto_assign_floating_ip": {
+                        "value": false,
+                        "values": [
+                            true,
+                            false
+                        ],
+                        "description": "Autoassigning floating IP to VM"
+                    },
+                    "libvirt_type": {
+                        "value": "kvm",
+                        "description": "Libvirt domain type",
+                        "values": [
+                            "kvm",
+                            "qemu"
+                        ]
+                    },
+                    "start_guests_on_host_boot": {
+                        "value": true,
+                        "values": [
+                            true,
+                            false
+                        ],
+                        "description": "Whether to (re-)start guests when the host reboots. If enabled, this option causes guests assigned to the host to be unconditionally restarted when nova-compute starts. If the guest is found to be stopped, it starts. If it is found to be running, it reboots."
+                    },
+                    "use_cow_images": {
+                        "value": true,
+                        "values": [
+                            true,
+                            false
+                        ],
+                        "description": "Whether to use cow images"
+                    },
+                    "compute_scheduler_driver": {
+                        "values": [
+                            "nova.scheduler.filter_scheduler.FilterScheduler",
+                            "nova.scheduler.simple.SimpleScheduler"
+                        ],
+                        "value": "nova.scheduler.filter_scheduler.FilterScheduler",
+                        "description": "Driver to use for scheduling compute calls"
+                    }
                 },
                 "generated": {
                     "mysql": {
@@ -41,6 +84,9 @@
                     },
                     "rabbit": {
                         "password": ""
+                    },
+                    "swift": {
+                        "user_password": ""
                     }
                 }
             }
