@@ -643,10 +643,9 @@ class TestNode(Base):
         nodes = []
         while len(nodes) < len(slaves):
             if (time.time() - timer) > timeout:
-                raise Exception("%s Timeout expired. "
+                raise Exception("Timeout expired. "
                                 "Not all slave nodes discovered: %s" %
-                                (self._testMethodName,
-                                [n["devops_name"] for n in nodes]))
+                                str([n["devops_name"] for n in nodes]))
 
             nodes = []
             for slave in slaves:
@@ -658,8 +657,8 @@ class TestNode(Base):
                     logging.debug("Slave node not discovered: node=%s" % slave)
 
             time.sleep(15)
-            logging.debug("Slaves found: %s" % (self._testMethodName,
-                          [n["devops_name"] for n in nodes]))
+            logging.debug("Slaves found: %s" %
+                          str([n["devops_name"] for n in nodes]))
 
         return nodes
 
