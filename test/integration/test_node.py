@@ -114,7 +114,11 @@ class TestNode(Base):
         cluster_id = self._basic_provisioning(cluster_name, nodes)
         slave = ci.environment.node['slave1']
         node = self._get_slave_node_by_devops_node(slave)
-        wait(lambda: self._check_cluster_status(node['ip'], 5), timeout=300)
+        wait(
+            lambda: self._check_cluster_status(node['ip'], 5),
+            interval=20,
+            timeout=300
+        )
 
         logging.info("Verifying networks for simple flat installation.")
         vlans = self._get_cluster_vlans(cluster_id)
@@ -139,7 +143,11 @@ class TestNode(Base):
         cluster_id = self._basic_provisioning(cluster_name, nodes)
         slave = ci.environment.node['slave1']
         node = self._get_slave_node_by_devops_node(slave)
-        wait(lambda: self._check_cluster_status(node['ip'], 5, 8), timeout=300)
+        wait(
+            lambda: self._check_cluster_status(node['ip'], 5, 8),
+            interval=20,
+            timeout=300
+        )
 
         logging.info("Verifying networks for simple vlan installation.")
         vlans = self._get_cluster_vlans(cluster_id)
@@ -167,7 +175,11 @@ class TestNode(Base):
         logging.info("Checking cluster status on slave1")
         slave = ci.environment.node['slave1']
         node = self._get_slave_node_by_devops_node(slave)
-        wait(lambda: self._check_cluster_status(node['ip'], 13), timeout=300)
+        wait(
+            lambda: self._check_cluster_status(node['ip'], 13),
+            interval=20,
+            timeout=300
+        )
 
         logging.info("Verifying networks for ha flat installation.")
         vlans = self._get_cluster_vlans(cluster_id)
@@ -200,6 +212,7 @@ class TestNode(Base):
         node = self._get_slave_node_by_devops_node(slave)
         wait(
             lambda: self._check_cluster_status(node['ip'], 13, 8),
+            interval=20,
             timeout=300
         )
 
@@ -482,7 +495,10 @@ class TestNode(Base):
                     self.client.get("/api/tasks/%s" % task_id).read()
                 )
             except ValueError:
-                task = {'status': 'running'}
+                task = {
+                    'status': 'running',
+                    'progress': 0
+                }
             if task['status'] == 'ready':
                 logging.info("Task %r complete" % task_desc)
                 ready = True
@@ -493,6 +509,10 @@ class TestNode(Base):
             elif task['status'] == 'running':
                 if (time.time() - timer) > timeout:
                     raise Exception("Task %r timeout expired!" % task_desc)
+                else:
+                    if time.time() % 100 == 0:
+                        logging.info("time: %s" % (time.time() - timer))
+                        logging.info("progress: %s" % task['progress'])
                 time.sleep(5)
             else:
                 raise Exception("Task %s failed with status %r and msg: %s!" %
@@ -588,14 +608,19 @@ class TestNode(Base):
         """
         response = self.client.get("/api/nodes/")
         nodes = json.loads(response.read())
-        logging.debug("get_slave_node_by_devops_node: nodes at nailgun: %r" %
-                      str(nodes))
+        nodes_to_log = [{
+                         'name': n['name'],
+                         'ip': n['ip'],
+                         'status': n['status'],
+                         'mac': n['mac']
+                        } for n in nodes]
+        logging.debug("Nodes at nailgun: %s" % nodes_to_log)
 
         for n in nodes:
             for i in devops_node.interfaces:
-                logging.debug("get_slave_node_by_devops_node: \
-node.interfaces[n].mac_address: %r" % str(i.mac_address))
                 if n['mac'].capitalize() == i.mac_address.capitalize():
+                    logging.debug("Match found: devops_name=%s mac=%s",
+                                  (devops_node.name, n['mac']))
                     n['devops_name'] = devops_node.name
                     return n
         return None
@@ -617,18 +642,25 @@ node.interfaces[n].mac_address: %r" % str(i.mac_address))
 
         nodes = []
         while len(nodes) < len(slaves):
+            if (time.time() - timer) > timeout:
+                raise Exception("%s Timeout expired. "
+                                "Not all slave nodes discovered: %s" %
+                                (self._testMethodName,
+                                [n["devops_name"] for n in nodes]))
+
             nodes = []
             for slave in slaves:
                 node = self._get_slave_node_by_devops_node(slave)
                 if node is not None:
+                    logging.info("Slave node discovered: node=%s" % slave)
                     nodes.append(node)
                 else:
-                    logging.debug("Node %r not found" % node_name)
-                if (time.time() - timer) > timeout:
-                    raise Exception("Slave node agent failed to execute!")
-                time.sleep(15)
-                logging.info("Waiting for slave agent to run...")
-        logging.debug("%d node(s) found" % len(nodes))
+                    logging.debug("Slave node not discovered: node=%s" % slave)
+
+            time.sleep(15)
+            logging.debug("Slaves found: %s" % (self._testMethodName,
+                          [n["devops_name"] for n in nodes]))
+
         return nodes
 
     def _check_cluster_status(self, ip, smiles_count, networks_count=1):
@@ -638,28 +670,38 @@ node.interfaces[n].mac_address: %r" % str(i.mac_address))
 
         ctrl_ssh = SSHClient()
         ctrl_ssh.connect_ssh(ip, 'root', 'r00tme')
+
+        ##############################################
+        logging.info("Checking nova service list...")
         ret = ctrl_ssh.execute('/usr/bin/nova-manage service list')
         nova_status = (
             (ret['exit_status'] == 0)
             and (''.join(ret['stdout']).count(":-)") == smiles_count)
             and (''.join(ret['stdout']).count("XXX") == 0)
         )
-        if not nova_status:
-            logging.warn("Nova check fails:\n%s" % ret['stdout'])
+        logging.info("Nova status=%s" % nova_status)
+        logging.info("Nova stdout=\n%s" % ret['stdout'])
+
+        ##############################################
+        logging.info("Checking glance image list...")
         ret = ctrl_ssh.execute('. /root/openrc; glance index')
         cirros_status = (
             (ret['exit_status'] == 0)
             and (''.join(ret['stdout']).count("TestVM") == 1)
         )
-        if not cirros_status:
-            logging.warn("Cirros check fails:\n%s" % ret['stdout'])
+        logging.info("Glance status=%s" % cirros_status)
+        logging.info("Glance stdout=\n%s" % ret['stdout'])
+
+        ##############################################
+        logging.info("Checking nova network list...")
         ret = ctrl_ssh.execute('/usr/bin/nova-manage network list')
         nets_status = (
             (ret['exit_status'] == 0)
             and (len(ret['stdout']) == networks_count + 1)
         )
-        if not nets_status:
-            logging.warn("Networks check fails:\n%s" % ret['stdout'])
+        logging.info("Networks status=%s" % nets_status)
+        logging.info("Networks stdout=\n%s" % ret['stdout'])
+
         return (nova_status and cirros_status and nets_status)
 
     def _revert_nodes(self):
