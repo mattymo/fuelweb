@@ -207,8 +207,9 @@ class Controller:
         allocated_networks = self.driver.get_allocated_networks()
         if allocated_networks:
             for network in allocated_networks:
-                logger.debug("Reserving ip network %s" % network)
+                #logger.debug("Reserving ip network %s" % network)
                 self.networks_pool.reserve(ipaddr.IPNetwork(network))
+
 #       todo use settings
         with os.popen("ip route") as f:
             for line in f:
@@ -218,7 +219,7 @@ class Controller:
                 if words[0] == 'default':
                     continue
                 address = ipaddr.IPv4Network(words[0])
-                logger.debug("Reserving ip network %s" % address)
+                #logger.debug("Reserving ip network %s" % address)
                 self.networks_pool.reserve(address)
 
         logger.debug("Finished scanning for taken ip networks")

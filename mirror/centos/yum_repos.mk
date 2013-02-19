@@ -71,14 +71,14 @@ endef
 define yum_repo_fuel_folsom
 [openstack-epel-fuel]
 name=Mirantis OpenStack Custom Packages
-mirrorlist=http://download.mirantis.com/epel-fuel-folsom/mirror.internal.list
+mirrorlist=http://download.mirantis.com/epel-fuel-folsom/mirror.external.list
 gpgkey=https://fedoraproject.org/static/0608B895.txt
   http://mirror.centos.org/centos/RPM-GPG-KEY-CentOS-6
   http://download.mirantis.com/epel-fuel-folsom/rabbit.key
   http://download.mirantis.com/epel-fuel-folsom/mirantis.key
 gpgcheck=0
 enabled=1
-priority=1
+priority=5
 endef
 
 
@@ -89,7 +89,7 @@ baseurl=http://yum.puppetlabs.com/el/$(CENTOS_MAJOR)/products/$(CENTOS_ARCH)/
 enabled=1
 gpgcheck=1
 gpgkey=http://yum.puppetlabs.com/RPM-GPG-KEY-puppetlabs
-priority=1
+priority=5
 endef
 
 
@@ -115,6 +115,16 @@ define yum_repo_mirantis
 [mirror]
 name=CentOS $(CENTOS_RELEASE) - Base
 baseurl=http://srv08-srt.srt.mirantis.net/mirror/centos/$(CENTOS_RELEASE)/$(CENTOS_ARCH)
+gpgcheck=0
+enabled=1
+priority=5
+endef
+
+
+define yum_repo_local_old
+[mirror]
+name=CentOS $(CENTOS_RELEASE) - Base
+baseurl=file:$(shell readlink -f $(LOCAL_MIRROR_OLD))/centos/$(CENTOS_RELEASE)/$(CENTOS_ARCH)
 gpgcheck=0
 enabled=1
 priority=1

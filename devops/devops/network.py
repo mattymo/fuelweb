@@ -24,6 +24,12 @@ class IpNetworksPool:
               networks]))
         self._allocated_networks = set()
 
+    def __str__(self):
+        return {
+            "allocated": str(self._allocated_networks),
+            "available": str(self._available_networks)
+        }
+
     def reserve(self, network):
         for overlaping_network in filter(
             lambda n: n.overlaps(network),

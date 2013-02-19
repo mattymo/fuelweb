@@ -37,11 +37,15 @@ $(BUILD_DIR)/mirror/centos/yum.done: \
 		$(REQUIRED_RPMS) $(RPMFORGE_RPMS)
 	$(ACTION.TOUCH)
 
-$(LOCAL_MIRROR_CENTOS_OS_BASEURL)/repodata/comps.xml:
+$(BUILD_DIR)/mirror/centos/repomd.xml:
 	@mkdir -p $(@D)
-	wget -O $@.gz $(MIRROR_CENTOS_OS_BASEURL)/`wget -qO- $(MIRROR_CENTOS_OS_BASEURL)/repodata/repomd.xml | \
-	 grep '$(@F)\.gz' | awk -F'"' '{ print $$2 }'`
-	gunzip $(LOCAL_MIRROR_CENTOS_OS_BASEURL)/repodata/$(@F).gz
+	wget -qO $@ $(MIRROR_CENTOS_OS_BASEURL)/repodata/repomd.xml
+
+$(LOCAL_MIRROR_CENTOS_OS_BASEURL)/repodata/comps.xml: REPOMD=$(BUILD_DIR)/mirror/centos/repomd.xml
+$(LOCAL_MIRROR_CENTOS_OS_BASEURL)/repodata/comps.xml: | $(BUILD_DIR)/mirror/centos/repomd.xml
+	@mkdir -p $(@D)
+	wget -qO- $(MIRROR_CENTOS_OS_BASEURL)/$(shell cat $(REPOMD) | grep '$(@F)\.gz' | awk -F'"' '{ print $$2 }') \
+	| gunzip -c > $(LOCAL_MIRROR_CENTOS_OS_BASEURL)/repodata/$(@F).gz
 
 $(BUILD_DIR)/mirror/centos/repo.done: \
 		$(BUILD_DIR)/mirror/centos/yum.done \
