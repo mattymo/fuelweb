@@ -53,7 +53,7 @@ def appstart(keepalive=False):
         settings.PRODUCT_VERSION,
         settings.COMMIT_SHA
     ))
-    from nailgun.rpc import processed
+    from nailgun.rpc import threaded
     from nailgun.keepalive import keep_alive
     app = build_app()
 
@@ -65,9 +65,9 @@ def appstart(keepalive=False):
         if not keep_alive.is_alive():
             logger.info("Running KeepAlive watcher...")
             keep_alive.start()
-        rpc_process = processed.RPCProcess()
-        logger.info("Running RPC process...")
-        rpc_process.start()
+        rpc_thread = threaded.RPCThread()
+        logger.info("Running RPC consumer...")
+        rpc_thread.start()
     logger.info("Running WSGI app...")
     # seizes control
     if not int(settings.DEVELOPMENT):
@@ -86,6 +86,6 @@ def appstart(keepalive=False):
         logger.info("Stopping KeepAlive watcher...")
         keep_alive.join()
     if not settings.FAKE_TASKS:
-        logger.info("Stopping RPC process...")
-        rpc_process.terminate()
+        logger.info("Stopping RPC consumer...")
+        rpc_thread.join()
     logger.info("Done")

@@ -408,7 +408,7 @@ class Connection(object):
 
         return self.ensure(_connect_error, _declare_consumer)
 
-    def iterconsume(self, limit=None, timeout=None):
+    def iterconsume(self, limit=None, timeout=None, stopevent=None):
         """Return an iterator that will consume from all queues/consumers"""
 
         info = {'do_consume': True}
@@ -434,6 +434,13 @@ class Connection(object):
                     queue.consume(nowait=True)
                 queues_tail.consume(nowait=False)
                 info['do_consume'] = False
+            if not timeout and stopevent:
+                while not stopevent.isSet():
+                    try:
+                        return self.connection.drain_events(timeout=1)
+                    except socket.timeout:
+                        continue
+                return
             return self.connection.drain_events(timeout=timeout)
 
         for iteration in itertools.count(0):
