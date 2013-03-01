@@ -173,4 +173,12 @@ class nailgun(
     mode => 0600,
   }
 
+  file { "/var/www/html/index.html":
+    content => template("nailgun/redirect_to_cobbler_web.html.erb"),
+    owner => root,
+    group => root,
+    mode => 0644,
+    require => Class["nailgun::cobbler"],
+  }
+
 }
