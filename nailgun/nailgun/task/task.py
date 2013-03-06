@@ -5,6 +5,7 @@ import itertools
 import traceback
 import subprocess
 import shlex
+from functools import partial
 
 import web
 import netaddr
@@ -36,7 +37,7 @@ def fake_cast(queue, message, **kwargs):
     thread.name = message['method'].upper()
 
 
-if settings.FAKE_TASKS and int(settings.FAKE_TASKS):
+if settings.FAKE_TASKS or settings.FAKE_TASKS_AMQP:
     rpc.cast = fake_cast
 
 
@@ -95,7 +96,7 @@ class DeploymentTask(object):
         fqdns = ','.join([n.fqdn for n in nodes])
         logger.info("Associated FQDNs to nodes: %s" % fqdns)
 
-        if not settings.FAKE_TASKS or not int(settings.FAKE_TASKS):
+        if not settings.FAKE_TASKS and not settings.FAKE_TASKS_AMQP:
             logger.info("Entered to processing of 'real' tasks, not 'fake'..")
             nodes_to_provision = []
             for node in nodes:
@@ -295,7 +296,7 @@ class DeletionTask(object):
         nodes_to_delete = []
         nodes_to_restore = []
 
-        USE_FAKE = bool(settings.FAKE_TASKS and int(settings.FAKE_TASKS))
+        USE_FAKE = settings.FAKE_TASKS or settings.FAKE_TASKS_AMQP
 
         # no need to call naily if there are no nodes in cluster
         if respond_to == 'remove_cluster_resp' and \

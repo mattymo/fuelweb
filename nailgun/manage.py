@@ -9,7 +9,7 @@ import code
 import web
 from sqlalchemy.orm import scoped_session, sessionmaker
 
-from nailgun.db import syncdb, orm
+from nailgun.db import syncdb, dropdb, orm
 from nailgun.settings import settings
 from nailgun.unit_test import TestRunner
 from nailgun.logger import logger
@@ -35,6 +35,10 @@ if __name__ == "__main__":
         '--fake-tasks', action='store_true', help='fake tasks'
     )
     run_parser.add_argument(
+        '--fake-tasks-amqp', action='store_true',
+        help='fake tasks with real AMQP'
+    )
+    run_parser.add_argument(
         '--keepalive',
         action='store_true',
         help='run keep alive thread'
@@ -56,6 +60,9 @@ if __name__ == "__main__":
     )
     syncdb_parser = subparsers.add_parser(
         'syncdb', help='sync application database'
+    )
+    dropdb_parser = subparsers.add_parser(
+        'dropdb', help='drop application database'
     )
     shell_parser = subparsers.add_parser(
         'shell', help='open python REPL'
@@ -80,6 +87,10 @@ if __name__ == "__main__":
         logger.info("Syncing database...")
         syncdb()
         logger.info("Done")
+    elif params.action == "dropdb":
+        logger.info("Dropping database...")
+        dropdb()
+        logger.info("Done")
     elif params.action == "test":
         logger.info("Running tests...")
         TestRunner.run()
@@ -98,7 +109,7 @@ if __name__ == "__main__":
             'LISTEN_ADDRESS': params.address,
         })
         for attr in ['FAKE_TASKS', 'FAKE_TASKS_TICK_COUNT',
-                     'FAKE_TASKS_TICK_INTERVAL']:
+                     'FAKE_TASKS_TICK_INTERVAL', 'FAKE_TASKS_AMQP']:
             param = getattr(params, attr.lower())
             if param is not None:
                 settings.update({attr: param})

@@ -61,8 +61,8 @@ def appstart(keepalive=False):
         logger.info("Running KeepAlive watcher...")
         keep_alive.start()
 
-    if not settings.FAKE_TASKS:
-        if not keep_alive.is_alive():
+    if not settings.FAKE_TASKS or settings.FAKE_TASKS_AMQP:
+        if not keep_alive.is_alive() and not settings.FAKE_TASKS_AMQP:
             logger.info("Running KeepAlive watcher...")
             keep_alive.start()
         rpc_process = processed.RPCProcess()
@@ -85,7 +85,7 @@ def appstart(keepalive=False):
     if keep_alive.is_alive():
         logger.info("Stopping KeepAlive watcher...")
         keep_alive.join()
-    if not settings.FAKE_TASKS:
+    if not settings.FAKE_TASKS or settings.FAKE_TASKS_AMQP:
         logger.info("Stopping RPC process...")
         rpc_process.terminate()
     logger.info("Done")
