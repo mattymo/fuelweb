@@ -16,6 +16,7 @@ from sqlalchemy import ForeignKey, Enum, DateTime
 from sqlalchemy import create_engine
 from sqlalchemy.orm import relationship, backref
 from sqlalchemy.ext.declarative import declarative_base
+from sqlalchemy.ext.associationproxy import association_proxy
 
 from nailgun.logger import logger
 from nailgun.db import orm
@@ -312,6 +313,7 @@ class IPAddr(Base):
     id = Column(Integer, primary_key=True)
     network = Column(Integer, ForeignKey('networks.id'))
     node = Column(Integer, ForeignKey('nodes.id'))
+    nodes = relationship("Node", backref="networks_assocs")
     ip_addr = Column(String(25), nullable=False)
 
 
@@ -332,10 +334,8 @@ class Network(Base, BasicValidator):
     network_group_id = Column(Integer, ForeignKey('network_groups.id'))
     cidr = Column(String(25), nullable=False)
     gateway = Column(String(25))
-    nodes = relationship(
-        "Node",
-        secondary=IPAddr.__table__,
-        backref="networks")
+    nd = relationship("IPAddr", backref="networks")
+    nodes = association_proxy('nd', 'nodes')
 
 
 class NetworkGroup(Base, BasicValidator):
