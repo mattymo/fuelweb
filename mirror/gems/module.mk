@@ -1,3 +1,12 @@
+.PHONY: clean clean-mirror-gems mirror-gems
+
+clean: clean-mirror-gems
+
+clean-mirror-gems:
+	sudo rm -rf $(BUILD_DIR)/mirror/gems/build.done
+
+mirror-gems: $(BUILD_DIR)/mirror/gems/build.done
+
 $(BUILD_DIR)/mirror/gems/gems-bundle/Gemfile: $(call depv,MIRROR_GEMS)
 $(BUILD_DIR)/mirror/gems/gems-bundle/Gemfile:
 	mkdir -p $(@D)
