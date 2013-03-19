@@ -13,7 +13,7 @@ $(BUILD_DIR)/mirror/centos/etc/yum-plugins/priorities.py: \
 
 $(BUILD_DIR)/mirror/centos/etc/yum/pluginconf.d/priorities.conf:
 	mkdir -p $(@D)
-	echo "[main]\nenabled=1\ncheck_obsoletes=1\nfull_match=1" > $@
+	echo -e "[main]\nenabled=1\ncheck_obsoletes=1\nfull_match=1" > $@
 
 $(BUILD_DIR)/mirror/centos/etc/yum.repos.d/base.repo: $(call depv,YUM_REPOS)
 $(BUILD_DIR)/mirror/centos/etc/yum.repos.d/base.repo: \
