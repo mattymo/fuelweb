@@ -13,7 +13,7 @@ define(
 ],
 function(models, commonViews, dialogViews, nodesTabSummaryTemplate, editNodesScreenTemplate, nodeListTemplate, nodeTemplate, nodeStatusTemplate, editNodeDisksScreenTemplate, nodeDisksTemplate) {
     'use strict';
-    var NodesTab, NodesByRolesScreen, EditNodesScreen, AddNodesScreen, DeleteNodesScreen, NodeList, Node, EditNodeDisksScreen, NodeDisk;
+    var NodesTab, Screen, NodesByRolesScreen, EditNodesScreen, AddNodesScreen, DeleteNodesScreen, NodeList, Node, EditNodeScreen, EditNodeDisksScreen, NodeDisk;
 
     NodesTab = commonViews.Tab.extend({
         screen: null,
@@ -44,16 +44,17 @@ function(models, commonViews, dialogViews, nodesTabSummaryTemplate, editNodesScr
         initialize: function(options) {
             _.defaults(this, options);
         },
-        routeScreen: function() {
+        routeScreen: function(options) {
             var screens = {
                 'list': NodesByRolesScreen,
                 'add': AddNodesScreen,
-                'delete': DeleteNodesScreen
+                'delete': DeleteNodesScreen,
+                'disks': EditNodeDisksScreen
             };
-            this.changeScreen(screens[this.tabOptions[0]] || screens.list, this.tabOptions.slice(1));
+            this.changeScreen(screens[options[0]] || screens.list, options.slice(1));
         },
         render: function() {
-            this.routeScreen();
+            this.routeScreen(this.tabOptions);
             return this;
         }
     });
@@ -83,7 +84,12 @@ function(models, commonViews, dialogViews, nodesTabSummaryTemplate, editNodesScr
         }
     });
 
-    NodesByRolesScreen = Backbone.View.extend({
+    Screen = Backbone.View.extend({
+        constructorName: 'Screen',
+        keepScrollPosition: false
+    });
+
+    NodesByRolesScreen = Screen.extend({
         className: 'nodes-by-roles-screen',
         constructorName: 'NodesByRolesScreen',
         keepScrollPosition: true,
@@ -140,7 +146,7 @@ function(models, commonViews, dialogViews, nodesTabSummaryTemplate, editNodesScr
         }
     });
 
-    EditNodesScreen = Backbone.View.extend({
+    EditNodesScreen = Screen.extend({
         className: 'edit-nodes-screen',
         constructorName: 'EditNodesScreen',
         keepScrollPosition: false,
@@ -351,8 +357,7 @@ function(models, commonViews, dialogViews, nodesTabSummaryTemplate, editNodesScr
         events: {
             'click .node-name': 'startNodeRenaming',
             'keydown .node-renameable': 'onNodeNameInputKeydown',
-            'click .node-hardware': 'showNodeInfo',
-            'click .node-actions': 'editNodeDisks'
+            'click .node-hardware': 'showNodeInfo'
         },
         startNodeRenaming: function() {
             if (!this.renameable || this.renaming || this.model.collection.cluster.task('deploy', 'running')) {return;}
@@ -391,9 +396,6 @@ function(models, commonViews, dialogViews, nodesTabSummaryTemplate, editNodesScr
             var dialog = new dialogViews.ShowNodeInfoDialog({node: this.model});
             app.page.tab.registerSubView(dialog);
             dialog.render();
-        },
-        editNodeDisks: function() {
-            app.page.tab.changeScreen(EditNodeDisksScreen, {node: this.model});
         },
         updateProgress: function() {
             if (this.model.get('status') == 'provisioning' || this.model.get('status') == 'deploying') {
@@ -453,9 +455,13 @@ function(models, commonViews, dialogViews, nodesTabSummaryTemplate, editNodesScr
         }
     });
 
-    EditNodeDisksScreen = Backbone.View.extend({
+    EditNodeScreen = Screen.extend({
+        constructorName: 'EditNodeScreen'
+    });
+
+    EditNodeDisksScreen = EditNodeScreen.extend({
         className: 'edit-node-disks-screen',
-        screenName: 'edit-node-disks',
+        constructorName: 'EditNodeDisksScreen',
         keepScrollPosition: false,
         template: _.template(editNodeDisksScreenTemplate),
         events: {
@@ -480,8 +486,11 @@ function(models, commonViews, dialogViews, nodesTabSummaryTemplate, editNodesScr
         },
         initialize: function(options) {
             _.defaults(this, options);
-            this.constructor.__super__.initialize.apply(this, arguments);
-            this.previousDisksData = _.clone(this.node.get('meta').disks);
+            if ((this.node = this.model.get(this.screenOptions[0]))) {
+                this.previousDisksData = _.clone(this.node.get('meta').disks);
+            } else {
+                app.navigate('#cluster/' + this.model.id + '/nodes', {trigger: true, replace: true});
+            }
         },
         renderDisks: function(disks) {
             this.$('.node-disks').html('');
