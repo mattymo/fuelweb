@@ -325,6 +325,7 @@ function(models, commonViews, dialogViews, nodesTabSummaryTemplate, editNodesScr
             _.defaults(this, options);
         },
         render: function() {
+            this.tearDownRegisteredSubViews();
             var placeholders = this.role == 'controller' ? this.collection.cluster.get('mode') == 'ha' ? 3 : 1 : 0;
             this.$el.html(this.template({
                 cluster: this.collection.cluster,
@@ -486,13 +487,14 @@ function(models, commonViews, dialogViews, nodesTabSummaryTemplate, editNodesScr
         },
         initialize: function(options) {
             _.defaults(this, options);
-            if ((this.node = this.model.get(this.screenOptions[0]))) {
+            if ((this.node = this.model.get('nodes').get(this.screenOptions[0]))) {
                 this.previousDisksData = _.clone(this.node.get('meta').disks);
             } else {
                 app.navigate('#cluster/' + this.model.id + '/nodes', {trigger: true, replace: true});
             }
         },
         renderDisks: function(disks) {
+            this.tearDownRegisteredSubViews();
             this.$('.node-disks').html('');
             _.each(disks, _.bind(function(disk) {
                 var nodeDisk = new NodeDisk({node: this.node, disk: disk});
