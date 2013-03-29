@@ -475,7 +475,8 @@ function(models, commonViews, dialogViews, nodesTabSummaryTemplate, editNodesScr
             this.$('.btn').attr('disabled', true);
         },
         expandAll: function() {
-            $('.disk-edit-volume-group-form, .delete-volume-group').show();
+            this.$('.delete-volume-group').show();
+            this.$('.disk-edit-volume-group-form').collapse('show');
         },
         loadDefaults: function() {
             this.attributes = new models.Attributes();
@@ -548,7 +549,8 @@ function(models, commonViews, dialogViews, nodesTabSummaryTemplate, editNodesScr
             'click .use-all-ullocated': 'useAllUnallocatedSpace'
         },
         toggleEditDiskForm: function(e) {
-            this.$('.disk-edit-volume-group-form, .delete-volume-group').toggle();
+            this.$('.delete-volume-group').toggle();
+            this.$('.disk-edit-volume-group-form').collapse('toggle');
         },
         deleteVolumeGroup: function(e) {
             var group = this.$(e.currentTarget).parent().attr('class');
@@ -600,6 +602,7 @@ function(models, commonViews, dialogViews, nodesTabSummaryTemplate, editNodesScr
                 volumes: this.volumes,
                 volumeGroups: this.node.volumeGroupsByRoles(this.node.get('role'))
             }));
+            this.$('.disk-edit-volume-group-form').collapse({toggle: false});
             this.renderVisualGraph();
             return this;
         }
