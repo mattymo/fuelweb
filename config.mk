@@ -8,6 +8,7 @@ CENTOS_ARCH:=x86_64
 
 NO_UI_OPTIMIZE:=0
 
+LOCAL_MIRROR?=local_mirror
 LOCAL_MIRROR_SRC:=$(LOCAL_MIRROR)/src
 LOCAL_MIRROR_EGGS:=$(LOCAL_MIRROR)/eggs
 LOCAL_MIRROR_GEMS:=$(LOCAL_MIRROR)/gems
@@ -56,5 +57,4 @@ YUM_REPOS?=official epel fuel_folsom puppetlabs rpmforge devel_puppetlabs
 MIRROR_SRC?=internet
 
 # INTEGRATION TEST CONFIG
-NOFORWARD:=1
 iso.path:=$(BUILD_DIR)/iso/nailgun-centos-6.3-amd64.iso
