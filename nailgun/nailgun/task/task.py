@@ -6,6 +6,7 @@ import traceback
 import subprocess
 import shlex
 import os
+import json
 
 import web
 import netaddr
@@ -202,10 +203,10 @@ class DeploymentTask(object):
         bak = os.path.join(prefix, "%s.bak" % node.fqdn)
         new = os.path.join(prefix, node.fqdn)
         links = map(
-            lambda i: os.path.join(prefix, *i),
+            lambda i: os.path.join(prefix, i.ip_addr),
             orm().query(IPAddr.ip_addr).
             filter_by(node=node.id).
-            filter_by(admin=True)
+            filter_by(admin=True).all()
         )
         # backup directory if it exists
         if os.path.isdir(new):
@@ -314,6 +315,7 @@ mco_stompport=%(mco_stomp_port)s
 mco_stompuser=%(mco_stomp_user)s
 mco_stomppassword=%(mco_stomp_password)s
 mco_enable=1
+ks_spaces="%(ks_spaces)s"
             """ % {'puppet_master_host': settings.PUPPET_MASTER_HOST,
                    'puppet_version': settings.PUPPET_VERSION,
                    'mco_pskey': settings.MCO_PSKEY,
@@ -321,6 +323,8 @@ mco_enable=1
                    'mco_stomp_port': settings.MCO_STOMPPORT,
                    'mco_stomp_user': settings.MCO_STOMPUSER,
                    'mco_stomp_password': settings.MCO_STOMPPASSWORD,
+                   'ks_spaces': json.dumps(
+                       node.attributes.volumes).replace("\"", "\\\""),
                    }
 
             logger.debug("Node %s\nks_meta without extra params: %s" %
