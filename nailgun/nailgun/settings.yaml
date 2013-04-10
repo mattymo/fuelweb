@@ -6,7 +6,7 @@ COMMIT_SHA: "Unknown build"
 PRODUCT_VERSION: "0.1-beta"
 
 FIXTURES_TO_UPLOAD:
-  - "openstack_folsom.json"
+  - "openstack_grizzly.json"
   - "start_notification.json"
 
 DATABASE:

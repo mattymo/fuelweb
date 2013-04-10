@@ -646,7 +646,7 @@ class TestNode(Base):
             )
             for r in releases:
                 logging.debug("Found release name: %s" % r["name"])
-                if r["name"] == "Folsom":
+                if r["name"] in ["Folsom", "Grizzly"]:
                     logging.debug("Sample release id: %s" % r["id"])
                     return r["id"]
 
