@@ -18,7 +18,7 @@ LOCAL_MIRROR_CENTOS_OS_BASEURL:=$(LOCAL_MIRROR_CENTOS)/$(CENTOS_RELEASE)/os/$(CE
 # Use srv08 mirrors by default. Other possible default is 'msk'.
 # Setting any other value or removing of this variable will cause
 # download of all the packages directly from internet
-USE_MIRROR:=srv08
+#USE_MIRROR:=srv08
 ifeq ($(USE_MIRROR),srv08)
 YUM_REPOS=proprietary
 MIRROR_CENTOS=http://srv08-srt.srt.mirantis.net/fwm/centos

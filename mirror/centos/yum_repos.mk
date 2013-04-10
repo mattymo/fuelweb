@@ -67,9 +67,22 @@ priority=20
 endef
 
 define yum_repo_fuel_folsom
-[openstack-epel-fuel]
-name=Mirantis OpenStack Custom Packages
+[openstack-epel-fuel-folsom]
+name=Mirantis OpenStack Folsom Packages
 mirrorlist=http://download.mirantis.com/epel-fuel-folsom/mirror.internal.list
+gpgkey=https://fedoraproject.org/static/0608B895.txt
+  http://mirror.centos.org/centos/RPM-GPG-KEY-CentOS-6
+  http://download.mirantis.com/epel-fuel-folsom/rabbit.key
+  http://download.mirantis.com/epel-fuel-folsom/mirantis.key
+gpgcheck=0
+enabled=1
+priority=1
+endef
+
+define yum_repo_fuel_grizzly
+[openstack-epel-fuel-grizzly]
+name=Mirantis OpenStack Grizzly Packages
+baseurl=http://osci-koji.srt.mirantis.net/mash/fuel-3.0/$(CENTOS_ARCH)
 gpgkey=https://fedoraproject.org/static/0608B895.txt
   http://mirror.centos.org/centos/RPM-GPG-KEY-CentOS-6
   http://download.mirantis.com/epel-fuel-folsom/rabbit.key
