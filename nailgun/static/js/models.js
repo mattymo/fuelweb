@@ -147,7 +147,7 @@ define(function() {
             var volumeGroups =  {
                 controller: ['os'],
                 compute: ['os', 'vm'],
-                storage: ['os', 'cinder']
+                cinder: ['os', 'cinder']
             };
             return volumeGroups[role];
         },
