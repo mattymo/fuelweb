@@ -14,6 +14,7 @@ $(BUILD_DIR)/mirror/gems/gems-bundle/naily/Gemfile: \
 	echo -n > $@
 	for i in $(MIRROR_GEMS); do \
 		echo "source \"file://$(SOURCE_DIR)/$(LOCAL_MIRROR_GEMS)\"" >> $@; \
+		echo "source \"file://`readlink -f $(LOCAL_MIRROR_GEMS)`\"" >> $@; \
 		echo "source \"$$i\"" >> $@; \
 	done
 	echo "gem 'naily', '$(NAILY_VERSION)'" >> $@
