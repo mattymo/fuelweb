@@ -1,7 +1,7 @@
 PWD:=$(shell pwd -P)
 
 SOURCE_DIR:=$(PWD)
-BUILD_DIR:=$(PWD)/build
+BUILD_DIR?=$(PWD)/build
 DEPV_DIR:=$(BUILD_DIR)/depv
 
 .PHONY: all clean test help deep_clean

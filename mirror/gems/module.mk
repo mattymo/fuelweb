@@ -10,7 +10,7 @@ $(BUILD_DIR)/mirror/gems/gems-bundle/naily/Gemfile: $(call depv,MIRROR_GEMS)
 $(BUILD_DIR)/mirror/gems/gems-bundle/naily/Gemfile: $(BUILD_DIR)/packages/gems/build.done
 	mkdir -p $(@D)
 	echo -n > $@
-	echo "source \"file://$(SOURCE_DIR)/$(LOCAL_MIRROR_GEMS)\"" >> $@
+	echo "source \"file://`readlink -f $(LOCAL_MIRROR_GEMS)`\"" >> $@
 	echo "gem 'naily'" >> $@
 	$(ACTION.TOUCH)
 
