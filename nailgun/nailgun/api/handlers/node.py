@@ -1,13 +1,16 @@
 # -*- coding: utf-8 -*-
 
 import json
+import traceback
 from datetime import datetime
 
 import web
 
 from nailgun.notifier import notifier
 from nailgun.logger import logger
-from nailgun.api.models import Node
+from nailgun.volumes.manager import VolumeManager
+
+from nailgun.api.models import Node, NodeAttributes
 from nailgun.api.handlers.base import JSONHandler, content_json
 
 
@@ -26,9 +29,26 @@ class NodeHandler(JSONHandler):
     @content_json
     def PUT(self, node_id):
         node = self.get_object_or_404(Node, node_id)
+        if not node.attributes:
+            node.attributes = NodeAttributes(node_id=node.id)
         data = Node.validate_update(web.data())
         for key, value in data.iteritems():
             setattr(node, key, value)
+        if not node.status in ('provisioning', 'deploying') \
+                and "role" in data or "cluster_id" in data:
+            try:
+                node.attributes.volumes = \
+                    node.volume_manager.gen_volumes_info()
+            except Exception as exc:
+                msg = (
+                    "Failed to generate volumes "
+                    "info for node '{0}': '{1}'"
+                ).format(
+                    node.name or data.get("mac") or data.get("id"),
+                    str(exc) or "see logs for details"
+                )
+                logger.warning(traceback.format_exc())
+                notifier.notify("error", msg, node_id=node.id)
         self.db.commit()
         return self.render(node)
 
@@ -67,6 +87,22 @@ class NodeCollectionHandler(JSONHandler):
         node.timestamp = datetime.now()
         self.db.add(node)
         self.db.commit()
+        node.attributes = NodeAttributes()
+        try:
+            node.attributes.volumes = node.volume_manager.gen_volumes_info()
+        except Exception as exc:
+            msg = (
+                "Failed to generate volumes "
+                "info for node '{0}': '{1}'"
+            ).format(
+                node.name or data.get("mac") or data.get("id"),
+                str(exc) or "see logs for details"
+            )
+            logger.warning(traceback.format_exc())
+            notifier.notify("error", msg, node_id=node.id)
+        self.db.add(node)
+        self.db.commit()
+
         try:
             ram = str(round(float(
                 node.meta['memory']['total']) / 1073741824, 1))
@@ -104,6 +140,33 @@ class NodeCollectionHandler(JSONHandler):
                     )
                     continue
                 setattr(node, key, value)
+            if not node.attributes:
+                node.attributes = NodeAttributes()
+                self.db.commit()
+            if not node.status in ('provisioning', 'deploying'):
+                variants = (
+                    not node.attributes.volumes,
+                    "disks" in node.meta and
+                    len(node.meta["disks"]) != len(node.attributes.volumes),
+                    "role" in nd,
+                    "cluster_id" in nd
+                )
+                if any(variants):
+                    try:
+                        node.attributes.volumes = \
+                            node.volume_manager.gen_volumes_info()
+                    except Exception as exc:
+                        msg = (
+                            "Failed to generate volumes "
+                            "info for node '{0}': '{1}'"
+                        ).format(
+                            node.name or data.get("mac") or data.get("id"),
+                            str(exc) or "see logs for details"
+                        )
+                        logger.warning(traceback.format_exc())
+                        notifier.notify("error", msg, node_id=node.id)
+
+                self.db.commit()
             if is_agent:
                 node.timestamp = datetime.now()
                 if not node.online:
@@ -121,3 +184,122 @@ class NodeCollectionHandler(JSONHandler):
             self.db.add(node)
             self.db.commit()
         return map(NodeHandler.render, nodes_updated)
+
+
+class NodeAttributesHandler(JSONHandler):
+    fields = ('node_id', 'volumes')
+
+    @content_json
+    def GET(self, node_id):
+        node = self.get_object_or_404(Node, node_id)
+        node_attrs = node.attributes
+        if not node_attrs:
+            return web.notfound()
+        return self.render(node_attrs)
+
+    @content_json
+    def PUT(self, node_id):
+        node = self.get_object_or_404(Node, node_id)
+        # NO serious data validation yet
+        data = NodeAttributes.validate_json(web.data())
+        node_attrs = node.attributes
+        if not node_attrs:
+            return web.notfound()
+        for key, value in data.iteritems():
+            setattr(node_attrs, key, value)
+        self.db.commit()
+        return self.render(node_attrs)
+
+
+class NodeAttributesDefaultsHandler(JSONHandler):
+    fields = ('node_id', 'volumes')
+
+    @content_json
+    def GET(self, node_id):
+        node = self.get_object_or_404(Node, node_id)
+        if not node.attributes:
+            return web.notfound()
+        attr_params = web.input()
+        json_data = NodeAttributesHandler.render(
+            NodeAttributes(
+                node_id=node.id,
+                volumes=node.volume_manager.gen_volumes_info()
+            )
+        )
+        if hasattr(attr_params, "type"):
+            json_data["volumes"] = filter(
+                lambda a: a["type"] == attr_params.type,
+                json_data["volumes"]
+            )
+        return json_data
+
+    @content_json
+    def PUT(self, node_id):
+        node = self.get_object_or_404(Node, node_id)
+        if not node.attributes:
+            return web.notfound()
+        node.attributes = NodeAttributes()
+        node.attributes.volumes = node.volume_manager.gen_volumes_info()
+        self.db.commit()
+        return self.render(node.attributes)
+
+
+class NodeAttributesByNameDefaultsHandler(JSONHandler):
+
+    @content_json
+    def GET(self, node_id, attr_name):
+        attr_params = web.input()
+        node = self.get_object_or_404(Node, node_id)
+        if attr_name == "volumes":
+            attr = node.volume_manager.gen_volumes_info()
+        else:
+            raise web.notfound()
+        if hasattr(attr_params, "type"):
+            attr = filter(lambda a: a["type"] == attr_params.type, attr)
+        return attr
+
+
+class NodeAttributesByNameHandler(JSONHandler):
+
+    @content_json
+    def GET(self, node_id, attr_name):
+        attr_params = web.input()
+        node = self.get_object_or_404(Node, node_id)
+        node_attrs = node.attributes
+        if not node_attrs or not hasattr(node_attrs, attr_name):
+            raise web.notfound()
+        attr = getattr(node_attrs, attr_name)
+        if hasattr(attr_params, "type"):
+            attr = filter(lambda a: a["type"] == attr_params.type, attr)
+        return attr
+
+    @content_json
+    def PUT(self, node_id, attr_name):
+        node = self.get_object_or_404(Node, node_id)
+        # NO serious data validation yet
+        data = NodeAttributes.validate_json(web.data())
+        attr_params = web.input()
+        node_attrs = node.attributes
+        if not node_attrs or not hasattr(node_attrs, attr_name):
+            raise web.notfound()
+
+        attr = getattr(node_attrs, attr_name)
+        if hasattr(attr_params, "type"):
+            if isinstance(attr, list):
+                setattr(
+                    node_attrs,
+                    attr_name,
+                    filter(
+                        lambda a: a["type"] != attr_params.type,
+                        attr
+                    )
+                )
+                getattr(node_attrs, attr_name).extend(data)
+                attr = filter(
+                    lambda a: a["type"] == attr_params.type,
+                    getattr(node_attrs, attr_name)
+                )
+        else:
+            setattr(node_attrs, attr_name, data)
+            attr = getattr(node_attrs, attr_name)
+        return attr

@@ -143,6 +143,14 @@ define(function() {
     models.Node = Backbone.Model.extend({
         constructorName: 'Node',
         urlRoot: '/api/nodes',
+        volumeGroupsByRoles: function(role) {
+            var volumeGroups =  {
+                controller: ['os'],
+                compute: ['os', 'vm'],
+                cinder: ['os', 'cinder']
+            };
+            return volumeGroups[role];
+        },
         resource: function(resourceName) {
             var resource = 0;
             try {
@@ -227,6 +235,28 @@ define(function() {
         urlRoot: '/api/clusters/',
         isNew: function() {
             return false;
+        }
+    });
+
+    models.Disk = Backbone.Model.extend({
+        constructorName: 'Disk',
+        urlRoot: '/api/nodes/',
+        validate: function(attrs, options) {
+            var errors = [];
+            var volume = _.find(attrs.volumes, {vg: options.group});
+            if (_.isNaN(volume.size) || volume.size > options.unallocated  || volume.size < options.min) {
+                errors.push(volume.vg);
+            }
+            return _.isEmpty(errors) ? null : errors;
+        }
+    });
+
+    models.Disks = Backbone.Collection.extend({
+        constructorName: 'Disks',
+        model: models.Disk,
+        url: '/api/nodes/',
+        comparator: function(disk) {
+            return disk.id;
         }
     });
 

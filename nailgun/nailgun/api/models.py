@@ -19,6 +19,7 @@ from sqlalchemy.ext.declarative import declarative_base
 
 from nailgun.logger import logger
 from nailgun.db import orm
+from nailgun.volumes.manager import VolumeManager
 from nailgun.api.fields import JSON
 from nailgun.settings import settings
 from nailgun.api.validators import BasicValidator
@@ -37,6 +38,7 @@ class Release(Base, BasicValidator):
     description = Column(Unicode)
     networks_metadata = Column(JSON, default=[])
     attributes_metadata = Column(JSON, default={})
+    volumes_metadata = Column(JSON, default={})
     clusters = relationship("Cluster", backref="release")
 
     @classmethod
@@ -220,6 +222,9 @@ class Node(Base, BasicValidator):
     error_msg = Column(String(255))
     timestamp = Column(DateTime, nullable=False)
     online = Column(Boolean, default=True)
+    attributes = relationship("NodeAttributes",
+                              backref=backref("node"),
+                              uselist=False)
 
     @property
     def network_data(self):
@@ -227,6 +232,10 @@ class Node(Base, BasicValidator):
         #   which must be created on target node
         from nailgun.network import manager as netmanager
         return netmanager.get_node_networks(self.id)
+
+    @property
+    def volume_manager(self):
+        return VolumeManager(self)
 
     @property
     def needs_reprovision(self):
@@ -316,6 +325,13 @@ class Node(Base, BasicValidator):
                         "Invalid ID specified"
                     )
         return d
+
+
+class NodeAttributes(Base, BasicValidator):
+    __tablename__ = 'node_attributes'
+    id = Column(Integer, primary_key=True)
+    node_id = Column(Integer, ForeignKey('nodes.id'))
+    volumes = Column(JSON, default=[])
 
 
 class IPAddr(Base):

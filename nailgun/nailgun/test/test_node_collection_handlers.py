@@ -19,7 +19,10 @@ class TestHandlers(BaseHandlers):
         self.assertEquals([], response)
 
     def test_notification_node_id(self):
-        node = self.env.create_node(api=True)
+        node = self.env.create_node(
+            api=True,
+            meta=self.env.default_metadata()
+        )
         notif = self.db.query(Notification).first()
         self.assertEqual(node['id'], notif.node_id)
         resp = self.app.get(
@@ -114,11 +117,16 @@ class TestHandlers(BaseHandlers):
         self.assertEquals('new', node.manufacturer)
 
     def test_node_update_agent_discover(self):
-        node = self.env.create_node(api=False, status='provisioning')
+        node = self.env.create_node(
+            api=True,
+            status='provisioning',
+            meta=self.env.default_metadata()
+        )
+        node_db = self.env.nodes[0]
         resp = self.app.put(
             reverse('NodeCollectionHandler'),
             json.dumps([
-                {'mac': node.mac, 'is_agent': True,
+                {'mac': node_db.mac, 'is_agent': True,
                  'status': 'discover', 'manufacturer': 'new'}
             ]),
             headers=self.default_headers)
@@ -127,9 +135,9 @@ class TestHandlers(BaseHandlers):
             reverse('NodeCollectionHandler'),
             headers=self.default_headers
         )
-        self.db.refresh(node)
-        self.assertEquals('new', node.manufacturer)
-        self.assertEquals('provisioning', node.status)
+        self.db.refresh(node_db)
+        self.assertEquals('new', node_db.manufacturer)
+        self.assertEquals('provisioning', node_db.status)
 
     def test_node_timestamp_updated_only_by_agent(self):
         node = self.env.create_node(api=False)
