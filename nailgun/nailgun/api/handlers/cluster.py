@@ -52,8 +52,11 @@ class ClusterHandler(JSONHandler):
         )
         if instance.changes:
             json_data["changes"] = [
-                i.name for i in instance.changes
+                i.name for i in instance.changes if not i.node_id
             ]
+            json_data["changes"].extend([
+                [i.name, i.node_id] for i in instance.changes if i.node_id
+            ])
         else:
             json_data["changes"] = []
         return json_data

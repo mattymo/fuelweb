@@ -90,6 +90,11 @@ class NodeCollectionHandler(JSONHandler):
         node.attributes = NodeAttributes()
         try:
             node.attributes.volumes = node.volume_manager.gen_volumes_info()
+            if node.cluster:
+                node.cluster.add_pending_changes(
+                    "disks",
+                    node_id=node.id
+                )
         except Exception as exc:
             msg = (
                 "Failed to generate volumes "
@@ -156,6 +161,11 @@ class NodeCollectionHandler(JSONHandler):
                     try:
                         node.attributes.volumes = \
                             node.volume_manager.gen_volumes_info()
+                        if node.cluster:
+                            node.cluster.add_pending_changes(
+                                "disks",
+                                node_id=node.id
+                            )
                     except Exception as exc:
                         msg = (
                             "Failed to generate volumes "
@@ -203,6 +213,12 @@ class NodeAttributesHandler(JSONHandler):
         node = self.get_object_or_404(Node, node_id)
         # NO serious data validation yet
         data = NodeAttributes.validate_json(web.data())
+        if "volumes" in data:
+            if node.cluster:
+                node.cluster.add_pending_changes(
+                    "disks",
+                    node_id=node.id
+                )
         node_attrs = node.attributes
         if not node_attrs:
             return web.notfound()
@@ -241,6 +257,11 @@ class NodeAttributesDefaultsHandler(JSONHandler):
             return web.notfound()
         node.attributes = NodeAttributes()
         node.attributes.volumes = node.volume_manager.gen_volumes_info()
+        if node.cluster:
+            node.cluster.add_pending_changes(
+                "disks",
+                node_id=node.id
+            )
         self.db.commit()
         return self.render(node.attributes)
 
@@ -283,6 +304,12 @@ class NodeAttributesByNameHandler(JSONHandler):
         node_attrs = node.attributes
         if not node_attrs or not hasattr(node_attrs, attr_name):
             raise web.notfound()
+
+        if node.cluster:
+            node.cluster.add_pending_changes(
+                "disks",
+                node_id=node.id
+            )
 
         attr = getattr(node_attrs, attr_name)
         if hasattr(attr_params, "type"):
