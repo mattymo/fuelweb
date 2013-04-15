@@ -639,7 +639,7 @@ function(models, commonViews, dialogViews, nodesTabSummaryTemplate, editNodesScr
         },
         setVolumes: function(e, size, allUnallocated) {
             var group = this.$(e.currentTarget).parents('.volume-group').data('group');
-            this.$('input[name=' + group + ']').removeClass('error');
+            this.$('input[name=' + group + ']').removeClass('error').parents('.volume-group').next().text('');
             var volumes = _.cloneDeep(this.volumes);
             var volume = _.find(volumes, {vg: group});
             var unallocated = this.diskSize - this.countAllocatedSpace() + volume.size;
@@ -655,6 +655,7 @@ function(models, commonViews, dialogViews, nodesTabSummaryTemplate, editNodesScr
             if (allUnallocated || size === 0) {
                 if (allUnallocated) {
                     this.$('input[name=' + group + ']').val(_.find(this.volumes, {vg: group}).size.toFixed(2));
+
                     this.remainders[volume.vg] += this.remainders.unallocated;
                     this.remainders.unallocated = 0;
                 }
@@ -709,8 +710,8 @@ function(models, commonViews, dialogViews, nodesTabSummaryTemplate, editNodesScr
             this.getPartition();
             this.getVolumes();
             this.disk.on('invalid', function(model, errors) {
-                _.each(errors, _.bind(function(error) {
-                    this.$('input[name=' + error + ']').addClass('error');
+                _.each(_.keys(errors), _.bind(function(group) {
+                    this.$('input[name=' + group + ']').addClass('error').parents('.volume-group').next().text(errors[group]);
                 }, this));
             }, this);
         },
