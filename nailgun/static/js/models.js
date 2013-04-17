@@ -244,7 +244,7 @@ define(function() {
         validate: function(attrs, options) {
             var errors = {};
             var volume = _.find(attrs.volumes, {vg: options.group});
-            if (_.isNaN(volume.size)) {
+            if (_.isNaN(volume.size) || volume.size < 0) {
                 errors[volume.vg] = 'Invalid size';
             } else if (volume.size > options.unallocated ) {
                 errors[volume.vg] = 'Too large';
