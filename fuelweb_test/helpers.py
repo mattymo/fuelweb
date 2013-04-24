@@ -24,13 +24,15 @@ class HTTPClient(object):
         return self._open(req)
 
     def post(self, endpoint, data=None, content_type="application/json"):
-        if not data: data = {}
+        if not data:
+            data = {}
         req = urllib2.Request(self.url + endpoint, data=json.dumps(data))
         req.add_header('Content-Type', content_type)
         return self._open(req)
 
     def put(self, endpoint, data=None, content_type="application/json"):
-        if not data: data = {}
+        if not data:
+            data = {}
         req = urllib2.Request(self.url + endpoint, data=json.dumps(data))
         req.add_header('Content-Type', content_type)
         req.get_method = lambda: 'PUT'

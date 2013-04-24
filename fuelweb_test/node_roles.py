@@ -50,12 +50,10 @@ class Nodes(object):
         for node_name in node_roles.other_names:
             self.others.append(environment.node_by_name(node_name))
         self.slaves = self.controllers + self.computes + self.storages + \
-                      self.proxies + self.cobblers + self.stomps + \
-                      self.quantums + self.others
+            self.proxies + self.cobblers + self.stomps + \
+            self.quantums + self.others
         self.all = self.slaves + self.admins
         self.admin = self.admins[0]
 
     def __iter__(self):
         return self.all.__iter__()
-
-

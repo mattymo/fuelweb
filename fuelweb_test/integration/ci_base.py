@@ -79,8 +79,9 @@ class CiBase(object):
         for network in networks:
             self.manager.interface_create(network, node=node)
         self.add_empty_volume(node, name + '-system')
-        self.add_empty_volume(node, name + '-iso', capacity=_get_file_size(ISO),
-                              format='raw', device='cdrom', bus='ide')
+        self.add_empty_volume(
+            node, name + '-iso', capacity=_get_file_size(ISO),
+            format='raw', device='cdrom', bus='ide')
         return node
 
     def describe_empty_node(self, name, networks, memory=1024):
@@ -132,4 +133,3 @@ class CiBase(object):
     def public_network(self):
         return str(
             IPNetwork(self.environment().network_by_name('public').ip_network))
-

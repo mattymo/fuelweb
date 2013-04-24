@@ -6,7 +6,8 @@ from devops.helpers.helpers import SSHClient, wait
 from paramiko import RSAKey
 from fuelweb_test.helpers import LogServer
 from fuelweb_test.integration.base_test_case import BaseTestCase
-from fuelweb_test.integration.decorators import snapshot_errors, debug, fetch_logs
+from fuelweb_test.integration.decorators import snapshot_errors,\
+    debug, fetch_logs
 from fuelweb_test.nailgun_client import NailgunClient
 from fuelweb_test.settings import CLEAN
 
@@ -24,7 +25,6 @@ class TestNode(BaseTestCase):
         if CLEAN:
             self.ci().get_empty_state()
         self.nailgun_client = NailgunClient(self.get_admin_node_ip())
-
 
     @logwrap
     @fetch_logs()
@@ -145,7 +145,6 @@ class TestNode(BaseTestCase):
         task = self._run_network_verify(cluster_id)
         self._task_wait(task, 'Verify network ha flat', 60 * 2)
 
-
     @snapshot_errors()
     @logwrap
     @fetch_logs()
@@ -174,7 +173,8 @@ class TestNode(BaseTestCase):
     @fetch_logs()
     def test_network_config(self):
         self._clean_clusters()
-        self._basic_provisioning('network_config', {'controller': ['slave-01']})
+        self._basic_provisioning(
+            'network_config', {'controller': ['slave-01']})
 
         slave = self.nodes().slaves[0]
         node = self._get_slave_node_by_devops_node(slave)
@@ -308,8 +308,9 @@ class TestNode(BaseTestCase):
     def _block_mac_in_ebtables(mac):
         try:
             subprocess.check_output(
-                ['sudo', 'ebtables', '-t', 'filter', '-A', 'FORWARD', '-s', mac,
-                 '-j', 'DROP'],
+                [
+                    'sudo', 'ebtables', '-t', 'filter',
+                    '-A', 'FORWARD', '-s', mac, '-j', 'DROP'],
                 stderr=subprocess.STDOUT,
                 shell=True
             )
@@ -436,8 +437,8 @@ class TestNode(BaseTestCase):
         nodes = self._bootstrap_nodes(node_names)
 
         for node, role in self.get_nailgun_node_roles(nodes_dict):
-            self.nailgun_client.update_node(node['id'], {"role": role,
-                                                         "pending_addition": True})
+            self.nailgun_client.update_node(
+                node['id'], {"role": role, "pending_addition": True})
 
         self._update_nodes_in_cluster(cluster_id, nodes)
         task = self._launch_provisioning(cluster_id)
@@ -447,8 +448,9 @@ class TestNode(BaseTestCase):
         logging.info("Checking role files on slave nodes")
         for node, role in self.get_nailgun_node_roles(nodes_dict):
             logging.debug("Trying to connect to %s via ssh" % node['ip'])
-            ctrl_ssh = SSHClient(node['ip'], username='root', password='r00tme',
-                                 private_keys=self.get_private_keys())
+            ctrl_ssh = SSHClient(
+                node['ip'], username='root', password='r00tme',
+                private_keys=self.get_private_keys())
             logging.info("Checking /tmp/%s-file on %s" % (role, node['ip']))
             ret = ctrl_ssh.execute('test -f /tmp/%s-file' % role)
             self.assertEquals(ret['exit_code'], 0)
@@ -463,7 +465,6 @@ class TestNode(BaseTestCase):
                 node = self._get_slave_node_by_devops_node(slave)
                 nailgun_node_roles.append((node, role))
         return nailgun_node_roles
-
 
     @logwrap
     def _launch_provisioning(self, cluster_id):
@@ -566,7 +567,8 @@ class TestNode(BaseTestCase):
         resp = self.nailgun_client.update_cluster(cluster_id,
                                                   {"nodes": node_ids})
         self.assertEquals(200, resp.getcode())
-        cluster = json.loads(self.nailgun_client.get_cluster(cluster_id).read())
+        cluster = json.loads(
+            self.nailgun_client.get_cluster(cluster_id).read())
         nodes_in_cluster = [str(node['id']) for node in cluster['nodes']]
         self.assertEquals(sorted(node_ids), sorted(nodes_in_cluster))
 
@@ -605,7 +607,8 @@ class TestNode(BaseTestCase):
         and register on nailgun. Returns list of hashes with registred nailgun
         slave node descpriptions.
         """
-        if not devops_node_names: devops_node_names = []
+        if not devops_node_names:
+            devops_node_names = []
         timer = time.time()
 
         slaves = []
@@ -673,10 +676,11 @@ class TestNode(BaseTestCase):
         )
         if not nets_status:
             logging.warn("Networks check fails:\n%s" % ret['stdout'])
-        return (nova_status and
-                cirros_status and
-                nets_status and
-                self.logserver.get_status()
+        return (
+            nova_status and
+            cirros_status and
+            nets_status and
+            self.logserver.get_status()
         )
 
     @logwrap
@@ -686,4 +690,3 @@ class TestNode(BaseTestCase):
             with self.remote().open(key_string) as f:
                 keys.append(RSAKey.from_private_key(f))
         return keys
-

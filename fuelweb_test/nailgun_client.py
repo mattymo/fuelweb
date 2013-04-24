@@ -8,6 +8,7 @@ from fuelweb_test.integration.decorators import debug
 logger = logging.getLogger(__name__)
 logwrap = debug(logger)
 
+
 class NailgunClient(object):
     def __init__(self, ip):
         self.client = HTTPClient(

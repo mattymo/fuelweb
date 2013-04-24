@@ -5,7 +5,8 @@ from devops.helpers.helpers import wait
 from ipaddr import IPNetwork
 from fuelweb_test.integration.ci_base import CiBase
 from fuelweb_test.node_roles import NodeRoles
-from fuelweb_test.settings import INTERFACE_ORDER, POOLS, EMPTY_SNAPSHOT, ISO, FORWARDING, DHCP
+from fuelweb_test.settings import INTERFACE_ORDER, POOLS, EMPTY_SNAPSHOT, ISO,\
+    FORWARDING, DHCP
 
 logger = logging.getLogger('integration')
 
@@ -58,7 +59,6 @@ class CiFuelWeb(CiBase):
             timeout=self.puppet_timeout
         )
 
-
     def get_keys(self, node):
         params = {
             'ip': node.get_ip_address_by_network_name('internal'),
@@ -66,16 +66,17 @@ class CiFuelWeb(CiBase):
             'gw': self.internal_router(),
             'hostname': '.'.join((self.hostname, self.domain))
         }
-        keys = ("<Esc><Enter>\n"
-                "<Wait>\n"
-                "vmlinuz initrd=initrd.img ks=cdrom:/ks.cfg\n"
-                " ip=%(ip)s\n"
-                " netmask=%(mask)s\n"
-                " gw=%(gw)s\n"
-                " dns1=%(gw)s\n"
-                " hostname=%(hostname)s\n"
-                " <Enter>\n"
-               ) % params
+        keys = (
+            "<Esc><Enter>\n"
+            "<Wait>\n"
+            "vmlinuz initrd=initrd.img ks=cdrom:/ks.cfg\n"
+            " ip=%(ip)s\n"
+            " netmask=%(mask)s\n"
+            " gw=%(gw)s\n"
+            " dns1=%(gw)s\n"
+            " hostname=%(hostname)s\n"
+            " <Enter>\n"
+        ) % params
         return keys
 
     def setup_environment(self):
@@ -88,4 +89,3 @@ class CiFuelWeb(CiBase):
         self.wait_bootstrap()
         time.sleep(10)
         self.environment().snapshot(EMPTY_SNAPSHOT)
-
