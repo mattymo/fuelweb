@@ -26,7 +26,8 @@ class mirrors(urwid.WidgetWrap):
     self.parent = parent
     self.listbox_content = []
     self.settings = copy.deepcopy(DEFAULTS)
-    self.screen = self.screenUI()
+    self.screen = None
+    #self.screen = self.screenUI()
 
   def apply(self, args):
     if not self.check(args):
@@ -90,6 +91,9 @@ class mirrors(urwid.WidgetWrap):
   #def displayTooltip(self, obj):
   #  focus = obj.get_focus()[0].content
   #  self.parent.footer.set_text(focus.get_label())
+
+  def refresh(self):
+    pass
 
   def screenUI(self):
     #Define your text labels, text fields, and buttons first

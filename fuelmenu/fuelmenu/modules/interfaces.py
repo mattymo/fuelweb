@@ -161,8 +161,17 @@ IP address")
         params["gateway"]=responses["gateway"]
     self.log.info("Puppet data: %s %s %s" % (puppetclass, self.activeiface, params))    
     try:
+        #Gateway handling so DHCP will set gateway
+        if responses["bootproto"] == "dhcp":
+           expr='^GATEWAY=.*'
+           replace.replaceInFile("/etc/sysconfig/network",expr,"GATEWAY=")
         self.parent.refreshScreen()
         puppet.puppetApply(puppetclass,self.activeiface, params)
+        self.getNetwork()
+        expr='^GATEWAY=.*'
+        replace.replaceInFile("/etc/sysconfig/network",expr,"GATEWAY=%s"
+                          % (self.get_default_gateway_linux()))
+
     except Exception, e:
         self.log.error(e)
         self.parent.footer.set_text("Error applying changes. Check logs for details.")
@@ -205,6 +214,7 @@ IP address")
                                          "onboot": "no"}})
 
       self.netsettings[iface]['mac'] = netifaces.ifaddresses(iface)[netifaces.AF_LINK][0]['addr']
+      self.gateway=self.get_default_gateway_linux()
 
       #Set link state
       try:
@@ -271,7 +281,6 @@ IP address")
        if rb.base_widget.state == True:
          self.activeiface = rb.base_widget.get_label()
          break
-    self.gateway=self.get_default_gateway_linux()
     self.getNetwork()
     self.setNetworkDetails()
     return 
@@ -347,6 +356,11 @@ IP address")
   def setExtIfaceFields(self, enabled=True):
     ###TODO: Define ext iface fields as disabled and then toggle
     pass
+
+  def refresh(self):
+    self.getNetwork()
+    self.setNetworkDetails()
+
   def screenUI(self):
     #Define your text labels, text fields, and buttons first
     text1 = TextLabel("Network interface setup")

@@ -10,6 +10,7 @@ import copy
 import socket, struct
 import netaddr
 import dhcp_checker.api
+import netifaces
 from fuelmenu.settings import *
 from fuelmenu.common import network, puppet, replace, nailyfactersettings, \
      dialog
@@ -26,7 +27,8 @@ fields = ["static_label",
           "ADMIN_NETWORK/last"]
 facter_translate = {
   "ADMIN_NETWORK/interface"    : "internal_interface",
-  #"ADMIN_NETWORK/ipaddr"       : "internal_ipaddress",
+  "ADMIN_NETWORK/ipaddr"       : "internal_ipaddress",
+  "ADMIN_NETWORK/netmask"      : "internal_netmask",
   "ADMIN_NETWORK/first"        : "dhcp_pool_start",
   "ADMIN_NETWORK/last"         : "dhcp_pool_end",
   "ADMIN_NETWORK/static_start" : "static_pool_start",
@@ -83,7 +85,7 @@ class cobblerconf(urwid.WidgetWrap):
     self.extdhcp=True
     self.parent = parent
     self.oldsettings= self.load()
-    #self.screen = self.screenUI()
+    self.screen = None
      
   def check(self, args):
     """Validates that all fields have valid values and some sanity checks"""
@@ -98,10 +100,15 @@ class cobblerconf(urwid.WidgetWrap):
         pass
       else:
         responses[fieldname]=self.edits[index].get_edit_text()
-    responses["ADMIN_NETWORK/interface"]=self.activeiface
+
     ###Validate each field
     errors=[]
     
+    #Set internal_{ipaddress,netmask,interface}
+    responses["ADMIN_NETWORK/interface"]=self.activeiface
+    responses["ADMIN_NETWORK/netmask"]=self.netsettings[self.activeiface]["netmask"]
+    responses["ADMIN_NETWORK/ipaddr"]=self.netsettings[self.activeiface]["addr"]
+
     #ensure management interface is valid
     if responses["ADMIN_NETWORK/interface"] not in self.netsettings.keys():
       errors.append("Management interface not valid")
@@ -109,6 +116,7 @@ class cobblerconf(urwid.WidgetWrap):
       self.parent.footer.set_text("Scanning for DHCP servers. Please wait...")
       self.parent.refreshScreen()
 
+    
       ###Start DHCP check on this interface
       #dhcp_server_data=[{'server_id': '192.168.200.2', 'iface': 'eth2', 'yiaddr': '192.168.200.15', 'mac': '52:54:00:12:35:02', 'server_ip': '192.168.200.2', 'dport': 67, 'message': 'offer', 'gateway': '0.0.0.0'}]
       dhcp_server_data=dhcp_checker.api.check_dhcp_on_eth(\
@@ -240,6 +248,7 @@ likely fail."))
       else:
         self.edits[index].set_edit_text(DEFAULTS[fieldname]['value'])
     self.setNetworkDetails()
+
   def load(self):
     #Read in yaml
     defaultsettings=Settings().read(self.parent.defaultsettingsfile)
@@ -308,7 +317,6 @@ likely fail."))
   def getNetwork(self):
     """Uses netifaces module to get addr, broadcast, netmask about
        network interfaces"""
-    import netifaces
     for iface in netifaces.interfaces():
       if 'lo' in iface or 'vir' in iface:
       #if 'lo' in iface or 'vir' in iface or 'vbox' in iface:
@@ -347,6 +355,7 @@ likely fail."))
           self.netsettings[iface]['bootproto']="dhcp"
         else:
           self.netsettings[iface]['bootproto']="none"
+    self.gateway=self.get_default_gateway_linux()
 
   def getDHCP(self, iface):
     """Returns True if the interface has a dhclient process running"""
@@ -459,6 +468,9 @@ nodes." % len(dhcp_pool))
   #def setExtIfaceFields(self, enabled=True):
   #  ###TODO: Define ext iface fields as disabled and then toggle
   #  pass
+  def refresh(self):
+    self.getNetwork()
+    self.setNetworkDetails()
   def screenUI(self):
     #Define your text labels, text fields, and buttons first
     text1 = urwid.Text("Settings for PXE booting of slave nodes.")

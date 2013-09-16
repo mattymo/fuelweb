@@ -15,6 +15,7 @@ class shell():
     self.priority=99
     self.visible=True
     self.parent=parent
+    self.screen = None
     #self.screen = self.screenUI()
   def check(self):
     #TODO: Ensure all params are filled out and sensible
@@ -23,8 +24,11 @@ class shell():
   def start_shell(self, args):
     self.parent.mainloop.screen.stop()
     message="Type exit to return to the main UI."
-    subprocess.call("clear ; echo '%s';echo; bash" % message, shell=True)
+    subprocess.call("clear ; echo '%s';echo; bash -l" % message, shell=True)
     self.parent.mainloop.screen.start()
+
+  def refresh(self):
+    pass
 
   def screenUI(self):
     #Define your text labels, text fields, and buttons first
