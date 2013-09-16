@@ -72,9 +72,9 @@ $(BUILD_DIR)/packages/rpm/rpm-fuelmenu.done: SANDBOX:=$(BUILD_DIR)/packages/rpm/
 $(BUILD_DIR)/packages/rpm/rpm-fuelmenu.done: export SANDBOX_UP:=$(SANDBOX_UP)
 $(BUILD_DIR)/packages/rpm/rpm-fuelmenu.done: export SANDBOX_DOWN:=$(SANDBOX_DOWN)
 $(BUILD_DIR)/packages/rpm/rpm-fuelmenu.done: \
-               $(BUILD_DIR)/packages/rpm/prep.done \
-               $(SOURCE_DIR)/packages/rpm/specs/fuelmenu.spec \
-               $(call find-files,$(SOURCE_DIR)/packages/rpm/fuelmenu)
+		$(BUILD_DIR)/packages/rpm/prep.done \
+		$(SOURCE_DIR)/packages/rpm/specs/fuelmenu.spec \
+		$(call find-files,$(SOURCE_DIR)/packages/rpm/fuelmenu)
 	sudo sh -c "$${SANDBOX_UP}"
 	sudo mkdir -p $(SANDBOX)/tmp/SOURCES/fuelmenu
 	#sudo cp -r $(SOURCE_DIR)/packages/rpm/fuelmenu/* $(SANDBOX)/tmp/SOURCES/fuelmenu/
@@ -136,13 +136,13 @@ $(BUILD_DIR)/packages/rpm/repo.done: \
 		$(BUILD_DIR)/packages/rpm/rpm-rbenv-ruby.done \
 		$(BUILD_DIR)/packages/rpm/rpm-mcollective.done \
 		$(BUILD_DIR)/packages/rpm/rpm-dhcp-checker.done \
-		$(BUILD_DIR)/packages/rpm/rpm-fuelmenu
+		$(BUILD_DIR)/packages/rpm/rpm-fuelmenu.done
 	find $(BUILD_DIR)/packages/rpm/RPMS -name '*.rpm' -exec cp -u {} $(LOCAL_MIRROR_CENTOS_OS_BASEURL)/Packages \;
-	createrepo -g $(LOCAL_MIRROR_CENTOS_OS_BASEURL)/comps.xml \
+	createrepo -g $(LOCAL_MIRROR_CENTOS_OS_BASEURL)/repodata/comps.xml \
 		-o $(LOCAL_MIRROR_CENTOS_OS_BASEURL) $(LOCAL_MIRROR_CENTOS_OS_BASEURL)
 ifeq ($(CACHE_RHEL),1)
 	find $(BUILD_DIR)/packages/rpm/RPMS -name '*.rpm' -exec cp -u {} $(LOCAL_MIRROR_RHEL)/Packages \;
-	createrepo -g $(LOCAL_MIRROR_RHEL)/comps.xml \
+	createrepo -g $(LOCAL_MIRROR_RHEL)/repodata/comps.xml \
 		-o $(LOCAL_MIRROR_RHEL) $(LOCAL_MIRROR_RHEL)
 endif
 	$(ACTION.TOUCH)

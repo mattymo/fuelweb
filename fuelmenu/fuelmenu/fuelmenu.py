@@ -88,10 +88,10 @@ class FuelSetup():
         #log.info("%s" % self.menuitems.contents())
         for item in self.menuitems.body.contents:
             try:
-              log.info("inside loop %s" % item.original_widget.get_label())
+              #log.info("inside loop %s" % item.original_widget.get_label())
               #self.footer.set_text("inside loop %s" % item.original_widget.get_label())
               if item.original_widget.get_label() == choice:
-                self.footer.set_text("Found choice %s" % choice)
+                #self.footer.set_text("Found choice %s" % choice)
                 item.set_attr_map({ None: 'header'})
               else:
                 item.set_attr_map({ None: None})
@@ -108,7 +108,9 @@ class FuelSetup():
             child = self.children[0]
         else:
             child = self.children[int(self.choices.index(name))]
-        self.childpage = child.screenUI()
+        if not child.screen:
+           child.screen = child.screenUI()
+        self.childpage = child.screen
         self.childfill = urwid.Filler(self.childpage, 'top', 40)
         self.childbox = urwid.BoxAdapter(self.childfill, 40)
         self.cols = urwid.Columns([
@@ -120,6 +122,7 @@ class FuelSetup():
                     self.childbox,
                     urwid.Divider(" ")]))
                 ], 1)
+        child.refresh()
         self.listwalker[:] = [self.cols]
 
     def refreshScreen(self):

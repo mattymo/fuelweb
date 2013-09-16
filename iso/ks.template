@@ -76,7 +76,6 @@ bind-utils
 cronie
 crontabs
 curl
-fuelmenu
 man
 mlocate
 ntp
@@ -92,7 +91,7 @@ rubygem-netaddr
 rubygem-openstack
 wget
 yum
-
+fuelmenu
 
 # Mount installation media in chroot
 %post --nochroot
@@ -220,16 +219,16 @@ mkdir -p /etc/nailgun
 cp ${SOURCE}/version.yaml /etc/nailgun/version.yaml
 
 ###Run fuel menu
-#Redirect output and input for the app
-exec < /dev/tty6 > /dev/tty6 2> /dev/tty6
-#Switch to a terminal so we can see the app
-chvt 6
-fuelmenu
+[ -z "$showmenu" ] && showmenu="no"
+cat > /root/.showfuelmenu << EOF
+#Set to yes to run Fuel Setup 
+#Set to no to accept default settings
+showmenu=$showmenu
+EOF
 
-#Switch back to Anaconda
-chvt 1
-exec < /dev/tty1 > /dev/tty1 2> /dev/tty1
-
+##Switch back to Anaconda
+#chvt 1
+#exec < /dev/tty1 > /dev/tty1 2> /dev/tty1
 
 # Prepare custom /etc/issue logon banner and script for changing IP in it
 cat > /etc/issue << EOF

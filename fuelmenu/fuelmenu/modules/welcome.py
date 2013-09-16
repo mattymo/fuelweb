@@ -20,6 +20,9 @@ class welcome():
     #TODO: Ensure all params are filled out and sensible
     return True
 
+  def refresh(self):
+    pass
+
   def screenUI(self):
     #Define your text labels, text fields, and buttons first
     text1 = urwid.Text("Welcome to Fuel! Use the menu on the left")

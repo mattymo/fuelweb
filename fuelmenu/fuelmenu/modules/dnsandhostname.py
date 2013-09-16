@@ -56,6 +56,7 @@ class dnsandhostname(urwid.WidgetWrap):
     self.extdhcp=True
     self.parent = parent
     self.oldsettings= self.load()
+    self.screen = None
     #self.screen = self.screenUI()
      
   def check(self, args):
@@ -328,6 +329,9 @@ Releases."
     self.getNetwork()
     self.setNetworkDetails()
     return 
+
+  def refresh(self):
+    pass
 
   def screenUI(self):
     #Define your text labels, text fields, and buttons first
