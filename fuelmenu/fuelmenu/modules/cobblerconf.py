@@ -102,6 +102,8 @@ class cobblerconf(urwid.WidgetWrap):
         """Validates all fields have valid values and some sanity checks"""
         self.parent.footer.set_text("Checking data...")
         self.parent.refreshScreen()
+        #Refresh networking to make sure IP matches
+        self.getNetwork()
 
         #Get field information
         responses = dict()

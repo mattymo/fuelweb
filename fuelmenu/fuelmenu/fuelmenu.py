@@ -234,6 +234,10 @@ class FuelSetup(object):
 
         self.mainloop = urwid.MainLoop(self.frame, palette, self.screen,
                                        unhandled_input=unhandled)
+        #Initialize each module
+        for child in reversed(self.choices):
+           self.setChildScreen(name=choice)
+
         self.mainloop.run()
 
     def exit_program(self, button):
