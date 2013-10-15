@@ -479,6 +479,26 @@ interface first.")
             self.net_text4.set_text("WARNING: This interface is DOWN. "
                                     "Configure it first.")
 
+        #If DHCP pool start and matches activeiface network, don't update
+        #This means if you change your pool values, go to another page, then
+        #go back, it will not reset your changes. But what is more likely is
+        #you will change the network settings for interface eth0 and then come
+        #back to this page to update your DHCP settings. If the inSameSubnet
+        #test fails, just recalculate and set new values.
+        try:
+            for index, key in enumerate(fields):
+                if key == "ADMIN_NETWORK/dhcp_pool_start":
+                    dhcp_start = self.edits[index].get_edit_text()
+                    break
+            if network.inSameSubnet(dhcp_start,
+                                    self.netsettings[self.activeiface]['addr'],
+                                    self.netsettings[self.activeiface]['netmask']):
+                log.debug("Existing network settings exist. Not changing.")
+                return
+        except:
+            log.debug("Existing network settings missing or invalid. "
+                      "Updating...")
+
         #Calculate and set Static/DHCP pool fields
         #Max IPs = net size - 2 (master node + bcast)
         #Add gateway so we exclude it
