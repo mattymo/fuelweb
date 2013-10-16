@@ -20,7 +20,7 @@ def inSameSubnet(ip1, ip2, netmask_or_cidr):
         cidr1 = netaddr.IPNetwork("%s/%s" % (ip1, netmask_or_cidr))
         cidr2 = netaddr.IPNetwork("%s/%s" % (ip2, netmask_or_cidr))
         return cidr1 == cidr2
-    except:
+    except netaddr.AddrFormatError:
         return False
 
 
@@ -28,7 +28,7 @@ def getCidr(ip, netmask):
     try:
         ipn = netaddr.IPNetwork("%s/%s" % (ip, netmask))
         return str(ipn.cidr)
-    except:
+    except netaddr.AddrFormatError:
         return False
 
 
@@ -36,7 +36,7 @@ def getCidrSize(cidr):
     try:
         ipn = netaddr.IPNetwork(cidr)
         return ipn.size
-    except:
+    except netaddr.AddrFormatError:
         return False
 
 
@@ -55,5 +55,5 @@ def getNetwork(ip, netmask, additionalip=None):
                            str(value) != additionalip]
 
         return ipn_list
-    except:
+    except netaddr.AddrFormatError:
         return False

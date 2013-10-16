@@ -485,18 +485,16 @@ interface first.")
         #you will change the network settings for interface eth0 and then come
         #back to this page to update your DHCP settings. If the inSameSubnet
         #test fails, just recalculate and set new values.
-        try:
-            for index, key in enumerate(fields):
-                if key == "ADMIN_NETWORK/dhcp_pool_start":
-                    dhcp_start = self.edits[index].get_edit_text()
-                    break
-            if network.inSameSubnet(dhcp_start,
-                                    self.netsettings[self.activeiface]['addr'],
-                                    self.netsettings[self.activeiface][
-                                    'netmask']):
-                log.debug("Existing network settings exist. Not changing.")
-                return
-        except:
+        for index, key in enumerate(fields):
+            if key == "ADMIN_NETWORK/dhcp_pool_start":
+                dhcp_start = self.edits[index].get_edit_text()
+                break
+        if network.inSameSubnet(dhcp_start,
+                                self.netsettings[self.activeiface]['addr'],
+                                self.netsettings[self.activeiface]['netmask']):
+            log.debug("Existing network settings exist. Not changing.")
+            return
+        else:
             log.debug("Existing network settings missing or invalid. "
                       "Updating...")
 
