@@ -13,6 +13,9 @@
 # under the License.
 
 import netaddr
+import logging
+import traceback
+log = logging.getLogger('fuelmenu.mirrors')
 
 
 def inSameSubnet(ip1, ip2, netmask_or_cidr):
@@ -21,6 +24,7 @@ def inSameSubnet(ip1, ip2, netmask_or_cidr):
         cidr2 = netaddr.IPNetwork("%s/%s" % (ip2, netmask_or_cidr))
         return cidr1 == cidr2
     except netaddr.AddrFormatError:
+        log.warning(traceback.format_exc())
         return False
 
 
@@ -29,6 +33,7 @@ def getCidr(ip, netmask):
         ipn = netaddr.IPNetwork("%s/%s" % (ip, netmask))
         return str(ipn.cidr)
     except netaddr.AddrFormatError:
+        log.warning(traceback.format_exc())
         return False
 
 
@@ -37,6 +42,7 @@ def getCidrSize(cidr):
         ipn = netaddr.IPNetwork(cidr)
         return ipn.size
     except netaddr.AddrFormatError:
+        log.warning(traceback.format_exc())
         return False
 
 
@@ -56,4 +62,5 @@ def getNetwork(ip, netmask, additionalip=None):
 
         return ipn_list
     except netaddr.AddrFormatError:
+        log.warning(traceback.format_exc())
         return False
