@@ -127,6 +127,8 @@ class NetworkManager(object):
             network=admin_net_id
         ).all()
 
+        num = 1
+
         if not node_admin_ips or len(node_admin_ips) < num:
             admin_net = db().query(NetworkGroup).get(admin_net_id)
             logger.debug(
@@ -721,7 +723,7 @@ class NetworkManager(object):
         interfaces_names = sorted(set([
             interface.name for interface in node.interfaces]))
 
-        return dict(zip(interfaces_names, admin_ips))
+        return {node.admin_interface.name: admin_ips.pop()}
 
     @classmethod
     def _get_admin_network(cls, node):

@@ -67,7 +67,7 @@ class ProvisioningSerializer(object):
             'name_servers_search': '\"%s\"' % settings.DNS_SEARCH,
             'netboot_enabled': '1',
             'kernel_options': {
-                'netcfg/choose_interface': node.admin_interface.name,
+                'netcfg/choose_interface': node.admin_interface.mac,
                 'udevrules': cls.interfaces_mapping_for_udev(node)},
             'ks_meta': {
                 'ks_spaces': node.attributes.volumes,
@@ -102,9 +102,12 @@ class ProvisioningSerializer(object):
 
             interfaces[name] = {
                 'mac_address': interface.mac,
-                'static': '0',
-                'netmask': admin_netmask,
-                'ip_address': admin_ips[name]}
+                'static': '0'}
+
+            if name == node.admin_interface.name:
+                interfaces[name]['netmask'] = admin_netmask
+                interfaces[name]['ip_address'] = admin_ips[name]
+
 
             # interfaces_extra field in cobbler ks_meta
             # means some extra data for network interfaces
